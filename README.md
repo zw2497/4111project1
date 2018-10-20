@@ -15,42 +15,40 @@ I will not implement the entities such as *Vote, Organizer, Event*. only impleme
 
 ## SQL schema
 ```
-CREATE TABLE User(
-Email varchar(100) PRIMARY KEY,
-Name varchar(100) NOT NULL
-)
+CREATE TABLE users(
+    u_id        SERIAL PRIMARY KEY,
+    email       text NOT NULL,
+    name        text NOT NULL
+);
 
-CREATE TABLE Organization(
-O_id int PRIMARY KEY,
-Course_id int,
-E_id int,     
-FOREIGN KEY (Course_id) REFERENCES Course(Course_id),
-FOREIGN KEY (E_id) REFERENCES Event(E_id),
-CHECK(
-Course_id is not NULL or
-E_id is not NULL
-)
-)
+CREATE TABLE organizations(
+    o_id        SERIAL PRIMARY KEY,
+    name        text NOT NULL,
+    create_time date NOT NULL,
+    creator_id  int NOT NULL REFERENCES users (u_id),
+    type        text NOT NULL CHECK (type in ('Course', 'Event'))
+);
 
-CREATE TABLE Term(
-Semester varchar(100),
-Year int,
-PRIMARY KEY (Year, Semester)
-)
+CREATE TABLE terms(
+    t_id        SERIAL PRIMARY KEY,
+    semester    text NOT NULL,
+    year        interval YEAR NOT NULL
+);
 
-CREATE TABLE Course_offer(
-Year int NOT NULL,
-Semester varchar(100) NOT NULL,
-Course_name varchar(100) NOT NULL,
-Course_id int PRIMARY KEY,
-FOREIGN KEY (Year, Semester) REFERENCES Term(Year, Semester)
-)
+CREATE TABLE courses(
+    course_id   int PRIMARY KEY REFERENCES organizations (o_id)
+);
 
-CREATE TABLE Event(
-E_id int PRIMARY KEY,
-Name varchar(100) NOT NULL,
-Creation_time varchar(100) NOT NULL
-)
+CREATE TABLE offer(
+    o_id        SERIAL PRIMARY KEY,
+    course_id   int REFERENCES courses (course_id),
+    term_id     int NOT NULL REFERENCES terms (t_id),
+    UNIQUE (course_id, term_id)
+);
+
+CREATE TABLE events(
+    event_id    int PRIMARY KEY REFERENCES organizations (o_id)
+);
 
 CREATE TABLE Question_belong(
 Q_id int PRIMARY KEY,
