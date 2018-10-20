@@ -21,11 +21,10 @@ CREATE TABLE users(
     name        text NOT NULL
 );
 
-
 CREATE TYPE o_type AS ENUM ('course', 'event');
 CREATE TABLE organizations_create(
     o_id        SERIAL PRIMARY KEY,
-    description text,
+    Description text,
     name        text NOT NULL,
     create_time date NOT NULL,
     creator_id  int NOT NULL REFERENCES users (u_id),
@@ -34,22 +33,18 @@ CREATE TABLE organizations_create(
 
 CREATE TABLE enroll(
     user_id     int REFERENCES users (u_id),
-    org_id      int REFERENCES organizations (o_id),
+    org_id      int REFERENCES organizations_create(o_id),
     PRIMARY KEY (user_id, org_id)
-);
-
-CREATE TABLE courses(
-    course_id   int PRIMARY KEY REFERENCES organizations (o_id)
-);
-
-CREATE TABLE events(
-    event_id    int PRIMARY KEY REFERENCES organizations (o_id)
 );
 
 CREATE TABLE terms(
     t_id        SERIAL PRIMARY KEY,
     semester    text NOT NULL,
     year        interval YEAR NOT NULL
+);
+
+CREATE TABLE courses(
+    course_id   int PRIMARY KEY REFERENCES organizations_create (o_id)
 );
 
 CREATE TABLE offer(
@@ -59,10 +54,15 @@ CREATE TABLE offer(
     UNIQUE (course_id, term_id)
 );
 
+CREATE TABLE events(
+    event_id    int PRIMARY KEY REFERENCES organizations_create (o_id)
+);
+
 CREATE TABLE tags(
     t_id        SERIAL PRIMARY KEY,
     content     text NOT NULL
-)
+);
+
 
 CREATE TYPE resolve_type    AS ENUM ('resolved', 'unresolved');
 CREATE TYPE public_type     AS ENUM ('public', 'private');
@@ -70,7 +70,7 @@ CREATE TYPE pin_type        AS ENUM ('pined', 'unpined');
 CREATE TABLE question_belong_ask(
     q_id        SERIAL PRIMARY KEY,
     creator     int NOT NULL REFERENCES users(u_id),
-    org_id      int NOT NULL REFERENCES organizations(o_id) ON DELETE CASCADE,
+    org_id      int NOT NULL REFERENCES organizations_create(o_id) ON DELETE CASCADE,
     up_number   int DEFAULT 0,
     down_number int DEFAULT 0,
     create_time date NOT NULL,
@@ -80,9 +80,8 @@ CREATE TABLE question_belong_ask(
     content     text NOT NULL,
     update_time date NOT NULL,
     pin         pin_type NOT NULL DEFAULT 'unpined',
-    tag_id      int NOT NULL REFERENCES tags(t_id),
-)
-
+    tag_id      int NOT NULL REFERENCES tags(t_id)
+);
 
 CREATE TABLE comments(
     c_id        int PRIMARY KEY,
@@ -90,34 +89,30 @@ CREATE TABLE comments(
     creator_id  int REFERENCES users (u_id),
     up_number   int DEFAULT 0,
     down_number int DEFAULT 0,
-    q_id        int NOT NULL ON DELETE CASCADE  REFERENCES question_belong_ask(q_id)
-)
-
+    q_id        int NOT NULL REFERENCES question_belong_ask(q_id) ON DELETE CASCADE
+);
 
 CREATE TABLE reply( 
-    r_id            SERIAL PRIMARY KEY,
-    comment_source  int REFERENCES comments(c_id),
-    comment_target  int REFERENCES comments(c_id),
-    question_source int REFERENCES Comment(q_id),
-    question_target int REFERENCES Comment(q_id),
-    CHECK (question_source = question_target)
-)
+    r_id SERIAL PRIMARY KEY,
+    comment_source int REFERENCES comments(c_id),
+    comment_target int REFERENCES comments(c_id),
+    UNIQUE(comment_source, comment_target)
+);
 
-
-CREATE TYPE vote_type   AS ENUM ('up', 'down');
+CREATE TYPE vote_type        AS ENUM ('up', 'down');
 CREATE TABLE vote_question(
-    question_id     int NOT NULL REFERENCES question_belong_ask (q_id),
-    user_id         int NOT NULL REFERENCES users (u_id)
-    vote            vote_type NOT NULL,
-    PRIMARY KEY (q_id, u_id)
-)
+    question_id int NOT NULL REFERENCES question_belong_ask (q_id),
+    user_id int NOT NULL REFERENCES users (u_id),
+    vote vote_type NOT NULL,
+    PRIMARY KEY (question_id, user_id)
+);
 
 CREATE TABLE vote_comment(
-    comment_id      int NOT NULL REFERENCES comments(c_id) ,
-    user_id         int NOT NULL REFERENCES user(u_id) ,
-    Vote            vote_type NOT NULL,
-    PRIMARY KEY (c_id, u_id)
-)
+    comment_id int NOT NULL REFERENCES comments(c_id) ,
+    user_id int NOT NULL REFERENCES users(u_id) ,
+    Vote vote_type NOT NULL,
+    PRIMARY KEY (comment_id, user_id)
+);
 ```
 
 
