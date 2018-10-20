@@ -21,9 +21,11 @@ CREATE TABLE users(
     name        text NOT NULL
 );
 
+
 CREATE TYPE o_type AS ENUM ('course', 'event');
-CREATE TABLE organizations(
+CREATE TABLE organizations_create(
     o_id        SERIAL PRIMARY KEY,
+    description text,
     name        text NOT NULL,
     create_time date NOT NULL,
     creator_id  int NOT NULL REFERENCES users (u_id),
@@ -31,19 +33,23 @@ CREATE TABLE organizations(
 );
 
 CREATE TABLE enroll(
-    user_id     int NOT NULL REFERENCES users (u_id),
-    org_id      int NOT NULL REFERENCES organizations (o_id),
-    UNIQUE (user_id, org_id)
+    user_id     int REFERENCES users (u_id),
+    org_id      int REFERENCES organizations (o_id),
+    PRIMARY KEY (user_id, org_id)
+);
+
+CREATE TABLE courses(
+    course_id   int PRIMARY KEY REFERENCES organizations (o_id)
+);
+
+CREATE TABLE events(
+    event_id    int PRIMARY KEY REFERENCES organizations (o_id)
 );
 
 CREATE TABLE terms(
     t_id        SERIAL PRIMARY KEY,
     semester    text NOT NULL,
     year        interval YEAR NOT NULL
-);
-
-CREATE TABLE courses(
-    course_id   int PRIMARY KEY REFERENCES organizations (o_id)
 );
 
 CREATE TABLE offer(
@@ -53,25 +59,21 @@ CREATE TABLE offer(
     UNIQUE (course_id, term_id)
 );
 
-CREATE TABLE events(
-    event_id    int PRIMARY KEY REFERENCES organizations (o_id)
-);
-
 CREATE TABLE tags(
     t_id        SERIAL PRIMARY KEY,
-    content     text
+    content     text NOT NULL
 )
 
 CREATE TYPE resolve_type    AS ENUM ('resolved', 'unresolved');
 CREATE TYPE public_type     AS ENUM ('public', 'private');
 CREATE TYPE pin_type        AS ENUM ('pined', 'unpined');
-CREATE TABLE question_belong(
+CREATE TABLE question_belong_ask(
     q_id        SERIAL PRIMARY KEY,
     creator     int NOT NULL REFERENCES users(u_id),
     org_id      int NOT NULL REFERENCES organizations(o_id) ON DELETE CASCADE,
     up_number   int DEFAULT 0,
     down_number int DEFAULT 0,
-    Create_time date NOT NULL,
+    create_time date NOT NULL,
     solved_type resolve_type NOT NULL,
     public_type public_type NOT NULL,
     views       int NOT NULL,
@@ -82,57 +84,39 @@ CREATE TABLE question_belong(
 )
 
 
-
-CREATE TABLE Comment(
-C_id int PRIMARY KEY,
-Creation_time varchar(100) NOT NULL,
-Down_number int,
-Up_number int,
-Q_id int NOT NULL,
-Email varchar(100) NOT NULL,
-FOREIGN KEY (Q_id) REFERENCES Question_belong(Q_id)
-ON DELETE CASCADE,
-FOREIGN KEY (Email) REFERENCES User(Email)
+CREATE TABLE comments(
+    c_id        int PRIMARY KEY,
+    create_time date NOT NULL,
+    creator_id  int REFERENCES users (u_id),
+    up_number   int DEFAULT 0,
+    down_number int DEFAULT 0,
+    q_id        int NOT NULL ON DELETE CASCADE  REFERENCES question_belong_ask(q_id)
 )
 
-CREATE TABLE Comment_Comment( 
-Comment_target int,
-C_id int,
-FOREIGN KEY (C_id) REFERENCES Comment(C_id)
+
+CREATE TABLE reply( 
+    r_id            SERIAL PRIMARY KEY,
+    comment_source  int REFERENCES comments(c_id),
+    comment_target  int REFERENCES comments(c_id),
+    question_source int REFERENCES Comment(q_id),
+    question_target int REFERENCES Comment(q_id),
+    CHECK (question_source = question_target)
 )
 
-CREATE TABLE Vote_for_question(
-Q_id int NOT NULL,
-Email varchar(100) NOT NULL,
-Up_Down enum('Up','Down'),
-PRIMARY KEY (Q_id, Email),
-FOREIGN KEY (Q_id) REFERENCES Question_belong(Q_id),
-FOREIGN KEY (Email) REFERENCES User(Email)
+
+CREATE TYPE vote_type   AS ENUM ('up', 'down');
+CREATE TABLE vote_question(
+    question_id     int NOT NULL REFERENCES question_belong_ask (q_id),
+    user_id         int NOT NULL REFERENCES users (u_id)
+    vote            vote_type NOT NULL,
+    PRIMARY KEY (q_id, u_id)
 )
 
-CREATE TABLE Vote_for_comment(
-C_id int NOT NULL,
-Email varchar(100) NOT NULL,
-Up_Down enum('Up','Down'),
-PRIMARY KEY (C_id, Email),
-FOREIGN KEY (C_id) REFERENCES Comment(C_id),
-FOREIGN KEY (Email) REFERENCES User(Email)
-)
-
-CREATE TABLE Attend(
-Email varchar(100) NOT NULL,
-O_id int NOT NULL,
-PRIMARY KEY (Email, O_id),
-FOREIGN KEY (Email) REFERENCES User(Email),
-FOREIGN KEY (O_id) REFERENCES Organization(O_id)
-)
-
-CREATE TABLE Create_Instruct(
-Email varchar(100),
-O_id int,
-PRIMARY KEY (Email, O_id),
-FOREIGN KEY (Email) REFERENCES User(Email),
-FOREIGN KEY (O_id) REFERENCES Organization(O_id)
+CREATE TABLE vote_comment(
+    comment_id      int NOT NULL REFERENCES comments(c_id) ,
+    user_id         int NOT NULL REFERENCES user(u_id) ,
+    Vote            vote_type NOT NULL,
+    PRIMARY KEY (c_id, u_id)
 )
 ```
 
