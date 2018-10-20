@@ -13,7 +13,7 @@ We would like to implement a /Piazza/ on our own and add a few more functions to
 ## 3. Contingency Plan
 I will not implement the entities such as *Vote, Organizer, Event*. only implement the basic function of piazza with 4 entities: *User, Course, Post and Comment*.
 
-## SQL schema
+## 4. SQL schema
 ```
 CREATE TABLE users(
     u_id        SERIAL PRIMARY KEY,
@@ -96,6 +96,7 @@ CREATE TABLE reply(
     r_id SERIAL PRIMARY KEY,
     comment_source int REFERENCES comments(c_id),
     comment_target int REFERENCES comments(c_id),
+    question_id int NOT NULL REFERENCES question_belong_ask(q_id),
     UNIQUE(comment_source, comment_target)
 );
 
