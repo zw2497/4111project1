@@ -21,12 +21,19 @@ CREATE TABLE users(
     name        text NOT NULL
 );
 
+CREATE TYPE o_type AS ENUM ('course', 'event');
 CREATE TABLE organizations(
     o_id        SERIAL PRIMARY KEY,
     name        text NOT NULL,
     create_time date NOT NULL,
     creator_id  int NOT NULL REFERENCES users (u_id),
-    type        text NOT NULL CHECK (type in ('Course', 'Event'))
+    type        o_type NOT NULL
+);
+
+CREATE TABLE enroll(
+    user_id     int NOT NULL REFERENCES users (u_id),
+    org_id      int NOT NULL REFERENCES organizations (o_id),
+    UNIQUE (user_id, org_id)
 );
 
 CREATE TABLE terms(
@@ -41,7 +48,7 @@ CREATE TABLE courses(
 
 CREATE TABLE offer(
     o_id        SERIAL PRIMARY KEY,
-    course_id   int REFERENCES courses (course_id),
+    course_id   int NOT NULL REFERENCES courses (course_id),
     term_id     int NOT NULL REFERENCES terms (t_id),
     UNIQUE (course_id, term_id)
 );
@@ -50,29 +57,31 @@ CREATE TABLE events(
     event_id    int PRIMARY KEY REFERENCES organizations (o_id)
 );
 
-CREATE TABLE Question_belong(
-Q_id int PRIMARY KEY,
-Up_number int,
-Down_number int,
-Creation_time varchar(100) NOT NULL,
-solved_status enum('Resolved','Unresolved') NOT NULL,
-Public_status enum('Private','Public') NOT NULL,
-Views int NOT NULL,
-Content varchar(100) NOT NULL,
-Last_updated_time varchar(100) NOT NULL,
-Pinned enum('Pinned','Unpinned'),
-Lable varchar(100) NOT NULL,
-O_id int NOT NULL,
-Email varchar(100) NOT NULL,
-FOREIGN KEY (Content) REFERENCES Tag(Content),
-FOREIGN KEY (O_id) REFERENCES Organization(O_id)
-ON DELETE CASCADE,
-FOREIGN KEY (Email) REFERENCES User(Email)
+CREATE TABLE tags(
+    t_id        SERIAL PRIMARY KEY,
+    content     text
 )
 
-CREATE TABLE Tag(
-Content varchar(100) PRIMARY KEY
+CREATE TYPE resolve_type    AS ENUM ('resolved', 'unresolved');
+CREATE TYPE public_type     AS ENUM ('public', 'private');
+CREATE TYPE pin_type        AS ENUM ('pined', 'unpined');
+CREATE TABLE question_belong(
+    q_id        SERIAL PRIMARY KEY,
+    creator     int NOT NULL REFERENCES users(u_id),
+    org_id      int NOT NULL REFERENCES organizations(o_id) ON DELETE CASCADE,
+    up_number   int DEFAULT 0,
+    down_number int DEFAULT 0,
+    Create_time date NOT NULL,
+    solved_type resolve_type NOT NULL,
+    public_type public_type NOT NULL,
+    views       int NOT NULL,
+    content     text NOT NULL,
+    update_time date NOT NULL,
+    pin         pin_type NOT NULL DEFAULT 'unpined',
+    tag_id      int NOT NULL REFERENCES tags(t_id),
 )
+
+
 
 CREATE TABLE Comment(
 C_id int PRIMARY KEY,
