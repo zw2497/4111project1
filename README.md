@@ -18,17 +18,18 @@ I will not implement the entities such as *Vote, Organizer, Event*. only impleme
 CREATE TABLE users(
     u_id        SERIAL PRIMARY KEY,
     email       text NOT NULL,
+    password    text NOT NULL,
     name        text NOT NULL
 );
 
 CREATE TYPE o_type AS ENUM ('course', 'event');
 CREATE TABLE organizations_create(
     o_id        SERIAL PRIMARY KEY,
-    Description text,
     name        text NOT NULL,
     create_time date NOT NULL,
     creator_id  int NOT NULL REFERENCES users (u_id),
-    type        o_type NOT NULL
+    type        o_type NOT NULL,
+    description text
 );
 
 CREATE TABLE enroll(
@@ -66,29 +67,29 @@ CREATE TABLE tags(
 
 CREATE TYPE resolve_type    AS ENUM ('resolved', 'unresolved');
 CREATE TYPE public_type     AS ENUM ('public', 'private');
-CREATE TYPE pin_type        AS ENUM ('pined', 'unpined');
+CREATE TYPE pin_type        AS ENUM ('pinned', 'unpinned');
+CREATE TYPE question_type   AS ENUM ('question', 'note');
 CREATE TABLE question_belong_ask(
     q_id        SERIAL PRIMARY KEY,
-    creator     int NOT NULL REFERENCES users(u_id),
+    creator_id  int NOT NULL REFERENCES users(u_id),
     org_id      int NOT NULL REFERENCES organizations_create(o_id) ON DELETE CASCADE,
-    up_number   int DEFAULT 0,
-    down_number int DEFAULT 0,
     create_time date NOT NULL,
-    solved_type resolve_type NOT NULL,
+    solved_type resolve_type,
     public_type public_type NOT NULL,
-    views       int NOT NULL,
-    content     text NOT NULL,
+    views       int DEFAULT 1,
+    title       text NOT NULL,
+    content     text,
     update_time date NOT NULL,
-    pin         pin_type NOT NULL DEFAULT 'unpined',
-    tag_id      int NOT NULL REFERENCES tags(t_id)
+    pin         pin_type NOT NULL DEFAULT 'unpinned',
+    tag_id      int NOT NULL REFERENCES tags(t_id),
+    q_type      question_type NOT NULL
 );
 
 CREATE TABLE comments(
-    c_id        int PRIMARY KEY,
+    c_id        SERIAL PRIMARY KEY,
     create_time date NOT NULL,
-    creator_id  int REFERENCES users (u_id),
-    up_number   int DEFAULT 0,
-    down_number int DEFAULT 0,
+    creator_id  int NOT NULL REFERENCES users (u_id),
+    content     text NOT NULL,
     q_id        int NOT NULL REFERENCES question_belong_ask(q_id) ON DELETE CASCADE
 );
 
@@ -114,6 +115,63 @@ CREATE TABLE vote_comment(
     Vote vote_type NOT NULL,
     PRIMARY KEY (comment_id, user_id)
 );
+```
+
+## Populate the tables
+### **Below content is from** 
+* https://piazza.com/class/jgwnwiy186d6pu?cid=148
+* https://piazza.com/class/jgwnwiy186d6pu?cid=210
+```
+INSERT INTO users(email, password, name) VALUES
+('ewu@cs.columbia.edu ','123456','Eugene Wu');
+
+INSERT INTO organizations_create (name, create_time, creator_id, type, description) VALUES
+('DATABASES W4111: Introduction to Databases', '2018-9-2', 1, 'course', null);
+
+INSERT INTO courses (course_id) VALUES
+(1)
+
+INSERT INTO tags (content) VALUES ('exam')
+
+INSERT INTO question_belong_ask (creator_id, org_id, create_time, solved_type, public_type, title, content, update_time, pin, tag_id) VALUES
+(1, 1, '2018-10-12', null, 'public', 'Moved OH to 10/17 3:30', 'I have moved my office hours to Wednesday 10/17 at 3:30-4:30PM for last minute midterm questions.  I will not have thursday office hours after class.', '2018-10-12', 'pinned', 1);
+
+INSERT INTO tags (content) VALUES ('other');
+
+INSERT INTO question_belong_ask (creator_id, org_id, create_time, solved_type, public_type, title, content, update_time, pin, tag_id, q_type) VALUES
+(1, 1, '2018-10-12', null, 'public', 'midterm study guide', $$I'd like to point to the study guide compiled by students from the students from last year's class.  I have not fully checked it for correctness, but it seemed to help previous students.  I encourage the class to edit and improve the wiki! https://github.com/w4111/scribenotes/wiki/Midterm-Study-Guide$$, '2018-10-7', 'pinned', 1, 'note');
+
+INSERT INTO question_belong_ask (creator_id, org_id, create_time, solved_type, public_type, title, content, update_time, pin, tag_id, q_type) VALUES
+(1, 1, '2018-10-7', 'resolved', 'public', 'The Web as a Database', $$Here is a great article about thinking about web scraping as a database, which is related to the last demo from the lecture discussing user defined functions.
+
+https://www.mixnode.com/blog/posts/turn-the-web-into-a-database-an-alternative-to-web-crawling-scraping$$, '2018-10-7', 'unpinned', 2, 'question');
+
+UPDATE question_belong_ask SET q_type = 'note' WHERE q_id = 3;
+
+
+INSERT INTO question_belong_ask (creator_id, org_id, create_time, solved_type, public_type, title, content, update_time, pin, tag_id, q_type) VALUES
+(1, 1, '2018-10-7', 'resolved', 'public', 'The Web as a Database', $$Here is a great article about thinking about web scraping as a database, which is related to the last demo from the lecture discussing user defined functions.
+
+https://www.mixnode.com/blog/posts/turn-the-web-into-a-database-an-alternative-to-web-crawling-scraping$$, '2018-10-7', 'unpinned', 2, 'question');
+
+INSERT INTO users(email, password, name) VALUES
+('Anonymous@piazza.edu ','123456','Anonymous');
+
+INSERT INTO comments(create_time, creator_id, q_id, content) VALUES
+('2018-10-7', 2, 3, $$There's no article here :)$$);
+
+INSERT INTO comments(create_time, creator_id, q_id, content) VALUES
+('2018-10-7', 1, 3, $$argh. fixed!$$);
+INSERT INTO reply (comment_source, comment_target, question_id) VALUES
+(2,1,3)
+```
+
+
+## Run some queries
+```
+SELECT us.name AS sourcename, cs.content AS sourcecontent, ut.name AS targetname, ct.content AS targetcontent, q.title AS question, q.content AS questioncontent
+FROM users AS us, comments AS cs, reply AS r, comments AS ct, users AS ut, question_belong_ask AS q
+WHERE us.u_id = cs.creator_id AND ut.u_id = ct.creator_id AND cs.c_id = r.comment_source AND ct.c_id = comment_target AND r.question_id = q.q_id
 ```
 
 
