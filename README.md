@@ -32,16 +32,18 @@ CREATE TABLE organizations_create(
     description text
 );
 
+CREATE TYPE enroll_type AS ENUM ('instructor', 'student');
 CREATE TABLE enroll(
     user_id     int REFERENCES users (u_id),
     org_id      int REFERENCES organizations_create(o_id),
+    type        enroll_type NOT NULL,
     PRIMARY KEY (user_id, org_id)
 );
 
 CREATE TABLE terms(
     t_id        SERIAL PRIMARY KEY,
     semester    text NOT NULL,
-    year        interval YEAR NOT NULL
+    year        int NOT NULL
 );
 
 CREATE TABLE courses(
@@ -64,7 +66,6 @@ CREATE TABLE tags(
     content     text NOT NULL
 );
 
-
 CREATE TYPE resolve_type    AS ENUM ('resolved', 'unresolved');
 CREATE TYPE public_type     AS ENUM ('public', 'private');
 CREATE TYPE pin_type        AS ENUM ('pinned', 'unpinned');
@@ -86,19 +87,22 @@ CREATE TABLE question_belong_ask(
 );
 
 CREATE TABLE comments(
-    c_id        SERIAL PRIMARY KEY,
+    c_id        int,
     create_time date NOT NULL,
     creator_id  int NOT NULL REFERENCES users (u_id),
     content     text NOT NULL,
-    q_id        int NOT NULL REFERENCES question_belong_ask(q_id) ON DELETE CASCADE
+    q_id        int REFERENCES question_belong_ask (q_id) ON DELETE CASCADE,
+    PRIMARY KEY (c_id, q_id)
 );
 
 CREATE TABLE reply( 
-    r_id SERIAL PRIMARY KEY,
-    comment_source int REFERENCES comments(c_id),
-    comment_target int REFERENCES comments(c_id),
-    question_id int NOT NULL REFERENCES question_belong_ask(q_id),
-    UNIQUE(comment_source, comment_target)
+    source int,
+    source_qid int,
+    target int,
+    target_qid int,
+    FOREIGN KEY (source, source_qid) REFERENCES comments (c_id, q_id),
+    FOREIGN KEY (target, target_qid) REFERENCES comments (c_id, q_id),
+    PRIMARY KEY (source, source_qid, target, target_qid)
 );
 
 CREATE TYPE vote_type        AS ENUM ('up', 'down');
@@ -110,7 +114,8 @@ CREATE TABLE vote_question(
 );
 
 CREATE TABLE vote_comment(
-    comment_id int NOT NULL REFERENCES comments(c_id) ,
+    comment_id int NOT NULL,
+    comment_qid int NOT NULL,
     user_id int NOT NULL REFERENCES users(u_id) ,
     Vote vote_type NOT NULL,
     PRIMARY KEY (comment_id, user_id)
