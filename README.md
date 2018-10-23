@@ -249,11 +249,100 @@ INSERT INTO question_belong_ask (creator_id, org_id, create_time, solved_type, p
 insert into comments(create_time, creator_id, content, org_id, q_id) values
 ('2018-10-1', 7, 'This assignment has a lot of complexity when it comes to coding the work - and I went to 3 TA sessions but they were always full. Please extend the deadline and have more office hours so they can help us out', 2, 8),
 ('2018-10-3', 8, 'See the max() and unique() items in ratings.txt to find M, N', 3, 6);
+
+insert into organizations_create(name, create_time, creator_id, type, description) values
+('Genes, Race, and Ancestry: The Meanderings of Two Sociologists in the Weeds of Genetic Methods','2018-10-22',7,'event',null),
+('Getting Started with Statistical Software (SAS)','2018-10-15',6,'event',null),
+('Monday Seminar: Peter DeScioli','2018-8-22',9,'event',null),
+('Orchestration of embryonic brain development by choroid plexus','2018-9-13',7,'event',null),
+('The Unseen Paradox of Agricultural Workers: How Our Food Systems Create Hunger','2018-9-11',8,'event',null),
+('Women in Energy Lunch: Ruth Dreessen','2018-9-17',3,'event',null),
+('Book Talk: The Politics of Police Reform: Society Against the State in Post-Soviet Countries','2018-10-8',2,'event',null),
+('Guided Historical Tour','2018-10-9',6,'event',null),
+('Elena Abarinovs Thesis Seminar Genetics and Development Department','2018-10-1',7,'event',null),
+('M.A. in Climate and Society Online Information Session','2018-9-15',10,'event',null);
+
+insert into enroll values
+(3,1,'instructor'),
+(4,1,'instructor'),
+(2,3,'instructor'),
+(4,3,'instructor'),
+(5,3,'instructor'),
+(6,3,'instructor'),
+(7,2,'student'),
+(8,2,'student'),
+(9,2,'student'),
+(8,3,'student'),
+(9,3,'student'),
+(6,11,'student'),
+(2,19,'instructor'),
+(3,18,'instructor'),
+(4,17,'instructor'),
+(5,16,'instructor'),
+(6,15,'instructor'),
+(7,14,'student'),
+(8,13,'student'),
+(9,12,'student');
+
+insert into events values
+(11),
+(12),
+(13),
+(14),
+(15),
+(16),
+(17),
+(18),
+(19),
+(20);
+
+insert into terms(semester, year) values
+('fall',2018),
+('spring',2018),
+('fall',2017),
+('spring',2017),
+('fall',2016),
+('spring',2016),
+('fall',2015),
+('spring',2015),
+('fall',2014),
+('spring',2014);
+
+insert into offer(course_id, term_id) values
+(1,1),
+(2,2),
+(3,3),
+(4,4),
+(5,2),
+(6,3),
+(7,1),
+(8,2),
+(9,6),
+(10,3);
+
+INSERT INTO comments(create_time, creator_id, content, org_id, q_id) VALUES
+('2018-10-9', 4, $$This assignment has a lot of complexity when it comes to coding the work - and I went to 3 TA sessions but they were always full. Please extend the deadline and have more office hours so they can help us out.$$, 2, 8),
+('2018-9-29', 4, $$I'm getting 68-69% for test accuracy using MATLAB, haven't checked training accuracy$$, 2, 9),
+('2018-10-4', 4, $$Notice rij do not exist for some specific i and j, so in calculation, avoiding using or removing some data in those positions might help.$$, 2, 9),
+('2018-10-5', 4, $$Make sure you encode$$, 3, 6),
+('2018-10-6', 4, $$The example on tutorial slide should have given you some hints but we would not limit how you do that as long as the results make sense!$$, 3, 7),
+('2018-10-7', 4, $$For your reference, you can always find response code here, https://developer.twitter.com/en/docs/basics/response-codes.html$$, 3, 7);
+
+INSERT INTO reply (source, source_qid, target, target_qid) VALUES
+(1,3,2,3),
+(3,4,4,4),
+(5,4,6,4),
+(7,4,8,4),
+(9,8,11,8),
+(10,6,14,6),
+(12,9,13,9),
+(15,7,16,7),
+(3,4,8,4),
+(4,4,7,4);
 ```
 
 ## Run some queries
-
-#### Display the number of comments of every question which have more than one comment
+#### Display the number of comments for every question which have more than one comment
 ```
 SELECT q.q_id AS questionid, q.title AS title, Count(*) AS comment_num
 FROM comments AS c, question_belong_ask AS q
@@ -270,24 +359,21 @@ FROM users AS us, comments AS cs, reply AS r, comments AS ct, users AS ut, quest
 WHERE us.u_id = cs.creator_id AND ut.u_id = ct.creator_id AND cs.c_id = r.source AND cs.q_id = r.source_qid AND ct.c_id = target AND ct.q_id = target_qid AND r.source_qid = q.q_id
 ```
 
-#### Display the quetion which has reply to it's comments
+#### Display number of questions which has comments but still is unresolved
 ```
 select count(distinct q.q_id)
 from question_belong_ask AS q
 where q.q_id in(SELECT q.q_id AS questionid
 FROM comments AS c, question_belong_ask AS q
-WHERE c.q_id = q.q_id)
+WHERE c.q_id = q.q_id and q.solved_type = 'unresolved')
 ```
 
-
-
-
-
-
-
-
-
-
-
+## 4. Descriptions of any changes
+* Modified the comment table so that it has a partial key, primary key (c_id, p_id), because it is a weak entity of questions.
+* Modified the reply table to make sure comment reply to comment and both of them belongs to the same question
+* Separated multiple relations between user and organization
+* User can enroll in any organization as an instructor or a student.
+* Deleted up number and down number, because it can be calculated from vote table
+* Modified Tag table, add primary key t_id
 
 
